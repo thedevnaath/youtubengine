@@ -317,10 +317,10 @@ export const Act4FourPillars: React.FC<ActProps> = ({ durationInFrames }) => {
               <div
                 style={{
                   position: 'absolute',
-                  left: 780,
-                  top: 240,
+                  left: 820,
+                  top: 290,
                   width: 780,
-                  height: 480,
+                  height: 440,
                   zIndex: 20,
                 }}
               >
@@ -344,8 +344,8 @@ export const Act4FourPillars: React.FC<ActProps> = ({ durationInFrames }) => {
                 fps={fps}
                 popFrame={490}
                 size={54}
-                x={1350}
-                y={220}
+                x={1380}
+                y={260}
               />
             </>
           )}

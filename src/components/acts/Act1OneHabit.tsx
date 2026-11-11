@@ -48,15 +48,15 @@ export const Act1OneHabit: React.FC<ActProps> = ({ durationInFrames }) => {
     lookAt = { x: 960, y: 400 };
   } else if (frame >= 220) {
     action = 'shrug';
-    lookAt = { x: 1320, y: 640 };
+    lookAt = { x: 1320, y: 450 };
   } else if (frame >= 160) {
     action = 'explain';
-    pointAt = { x: 1320, y: 500 };
-    lookAt = { x: 1320, y: 500 };
+    pointAt = { x: 1320, y: 450 };
+    lookAt = { x: 1320, y: 450 };
   } else if (frame >= 95) {
     action = 'explain';
-    pointAt = { x: 1320, y: 360 };
-    lookAt = { x: 1320, y: 360 };
+    pointAt = { x: 1320, y: 450 };
+    lookAt = { x: 1320, y: 450 };
   } else {
     action = 'walk';
   }
@@ -117,7 +117,7 @@ export const Act1OneHabit: React.FC<ActProps> = ({ durationInFrames }) => {
         </svg>
 
         {/* Layer 3: In-World Frameless Typography & Metaphors (Zero pill boxes, Zero borders) */}
-        {/* Beat 1 In-Scene Frameless Bold Typography (f10 - f85) */}
+        {/* Beat 1 In-Scene Frameless Bold Typography (f10 - f90) */}
         {frame >= 10 && frame < 90 && (
           <div
             style={{
@@ -133,7 +133,7 @@ export const Act1OneHabit: React.FC<ActProps> = ({ durationInFrames }) => {
             <span
               style={{
                 fontFamily: 'Inter, system-ui, sans-serif',
-                fontSize: 62,
+                fontSize: 66,
                 fontWeight: 900,
                 color: '#FF6B00',
                 letterSpacing: '-0.03em',
@@ -146,7 +146,7 @@ export const Act1OneHabit: React.FC<ActProps> = ({ durationInFrames }) => {
             <span
               style={{
                 fontFamily: 'Inter, system-ui, sans-serif',
-                fontSize: 40,
+                fontSize: 42,
                 fontWeight: 800,
                 color: '#FFFFFF',
                 marginTop: 6,
@@ -159,50 +159,56 @@ export const Act1OneHabit: React.FC<ActProps> = ({ durationInFrames }) => {
           </div>
         )}
 
-        {/* 1. "Not five habits" (f104) */}
-        <IconBadge
-          icon={ListTodo}
-          label="5 HABITS"
-          sublabel="Overwhelming Complexity"
-          color="#38BDF8"
-          frame={frame}
-          fps={fps}
-          popFrame={104}
-          strikeFrame={126}
-          size={56}
-          x={1320}
-          y={360}
-        />
+        {/* 1. "Not five habits" (f104 - f160) */}
+        {frame < 162 && (
+          <IconBadge
+            icon={ListTodo}
+            label="5 HABITS"
+            sublabel="Overwhelming Complexity"
+            color="#38BDF8"
+            frame={frame}
+            fps={fps}
+            popFrame={104}
+            strikeFrame={126}
+            size={68}
+            x={1320}
+            y={430}
+          />
+        )}
 
-        {/* 2. "not a 30-day challenge" (f164) */}
-        <IconBadge
-          icon={Calendar}
-          label="30-DAY CHALLENGE"
-          sublabel="Temporary Sprint"
-          color="#F87171"
-          frame={frame}
-          fps={fps}
-          popFrame={164}
-          strikeFrame={185}
-          size={56}
-          x={1320}
-          y={500}
-        />
+        {/* 2. "not a 30-day challenge" (f162 - f218) */}
+        {frame >= 162 && frame < 220 && (
+          <IconBadge
+            icon={Calendar}
+            label="30-DAY CHALLENGE"
+            sublabel="Temporary Sprint"
+            color="#F87171"
+            frame={frame}
+            fps={fps}
+            popFrame={164}
+            strikeFrame={185}
+            size={68}
+            x={1320}
+            y={430}
+          />
+        )}
 
-        {/* 3. "not waking up at four in the morning" (f220) */}
-        <IconBadge
-          icon={AlarmClock}
-          label="4:00 AM WAKE UP"
-          sublabel="Unrealistic Burnout"
-          color="#FBBF24"
-          frame={frame}
-          fps={fps}
-          popFrame={220}
-          strikeFrame={245}
-          size={56}
-          x={1320}
-          y={640}
-        />
+        {/* 3. "not waking up at four in the morning" (f220 - f284) */}
+        {frame >= 220 && frame < 284 && (
+          <IconBadge
+            icon={AlarmClock}
+            label="4:00 AM WAKE UP"
+            sublabel="Unrealistic Burnout"
+            color="#FBBF24"
+            frame={frame}
+            fps={fps}
+            popFrame={220}
+            strikeFrame={245}
+            size={68}
+            x={1320}
+            y={430}
+          />
+        )}
       </div>
 
       {/* Kinetic Typography Punch-in for Beat 04 (f284 - f340) */}

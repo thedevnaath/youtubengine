@@ -142,10 +142,7 @@ export const Act2MotivationTrap: React.FC<ActProps> = ({ durationInFrames }) => 
           />
         </svg>
 
-        {/* Layer 3: Foreground Architectural Elements (Desk occluding lower parts if needed) */}
-        {!isPhase1Push && !isPhase2Slump && !isPhase4Work && (
-          <StudioWorkspace layer="fg" />
-        )}
+
 
         {/* Layer 4: Floating Frameless Metaphors & Typography */}
         {/* Phase 2: Motivation Fails callout (f95 - f180) */}

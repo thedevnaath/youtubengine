@@ -7,7 +7,6 @@ interface StudioWorkspaceProps {
 
 export const StudioWorkspace: React.FC<StudioWorkspaceProps> = ({ layer = 'both', style = {} }) => {
   const showBg = layer === 'bg' || layer === 'both';
-  const showFg = layer === 'fg' || layer === 'both';
   const defaultZIndex = layer === 'fg' ? 18 : layer === 'bg' ? 5 : 1;
 
   return (
@@ -139,72 +138,7 @@ export const StudioWorkspace: React.FC<StudioWorkspaceProps> = ({ layer = 'both'
               }}
             />
           </div>
-
-          {/* Ergonomic Studio Chair Silhouette (Curved, behind stickman) */}
-          <svg
-            viewBox="0 0 1920 1080"
-            style={{ position: 'absolute', inset: 0, width: '100%', height: '100%', pointerEvents: 'none' }}
-          >
-            <path
-              d="M 1040 680 C 1040 630, 1070 590, 1100 590 C 1130 590, 1150 620, 1160 660 C 1170 700, 1160 760, 1130 770"
-              fill="none"
-              stroke="#1E293B"
-              strokeWidth="20"
-              strokeLinecap="round"
-            />
-          </svg>
         </>
-      )}
-
-      {/* FOREGROUND LAYER: DESK SURFACE & SCREEN (In front of stickman legs) */}
-      {showFg && (
-        <svg
-          viewBox="0 0 1920 1080"
-          style={{ position: 'absolute', inset: 0, width: '100%', height: '100%', pointerEvents: 'none' }}
-        >
-          <defs>
-            <linearGradient id="deskGrad" x1="0" y1="0" x2="0" y2="1">
-              <stop offset="0%" stopColor="#334155" />
-              <stop offset="10%" stopColor="#1E293B" />
-              <stop offset="100%" stopColor="#0B1120" />
-            </linearGradient>
-          </defs>
-
-          {/* Desk Top: Smooth curved contour */}
-          <path
-            d="M 120 740 C 600 720, 1320 720, 1800 740 L 1800 1080 L 120 1080 Z"
-            fill="url(#deskGrad)"
-          />
-
-          {/* Desk Edge Highlight */}
-          <path
-            d="M 120 740 C 600 720, 1320 720, 1800 740"
-            stroke="#475569"
-            strokeWidth="6"
-            strokeLinecap="round"
-            fill="none"
-          />
-
-          {/* Ultrawide Monitor Stand & Curved Screen */}
-          <rect x="520" y="520" width="480" height="210" rx="16" fill="#020617" stroke="#334155" strokeWidth="4" />
-          {/* Monitor Base */}
-          <path d="M 720 730 L 800 730" stroke="#475569" strokeWidth="10" strokeLinecap="round" />
-          <line x1="760" y1="730" x2="760" y2="745" stroke="#334155" strokeWidth="12" />
-
-          {/* Monitor editor content lines */}
-          {[65, 40, 85, 55, 75, 45].map((w, idx) => (
-            <rect
-              key={idx}
-              x="550"
-              y={550 + idx * 26}
-              width={(420 * w) / 100}
-              height="10"
-              rx="5"
-              fill={idx === 1 ? '#FF6B00' : idx === 3 ? '#38BDF8' : '#334155'}
-              opacity={0.8}
-            />
-          ))}
-        </svg>
       )}
     </div>
   );
