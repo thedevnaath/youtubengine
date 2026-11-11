@@ -1,7 +1,7 @@
 import React from 'react';
 import { interpolate, spring } from 'remotion';
 
-interface LiveLineChartProps {
+export interface LiveLineChartProps {
   frame: number;
   fps: number;
   startFrame: number;
@@ -10,8 +10,14 @@ interface LiveLineChartProps {
   height?: number;
   x?: number;
   y?: number;
+  label?: string;
+  color?: string;
 }
 
+/**
+ * Frameless Live Line Chart (Zero card boxes, Zero borders, Zero frosted glass)
+ * Draws dynamically in the 2D world space with an upward exponential curve.
+ */
 export const LiveLineChart: React.FC<LiveLineChartProps> = ({
   frame,
   fps,
@@ -21,6 +27,8 @@ export const LiveLineChart: React.FC<LiveLineChartProps> = ({
   height = 420,
   x = 0,
   y = 0,
+  label = '365-Day Compounding Curve',
+  color = '#FF6B00',
 }) => {
   if (frame < startFrame) return null;
 
@@ -41,7 +49,7 @@ export const LiveLineChart: React.FC<LiveLineChartProps> = ({
   });
 
   // SVG coordinate system
-  const padding = 50;
+  const padding = 40;
   const innerW = width - padding * 2;
   const innerH = height - padding * 2;
 
@@ -59,34 +67,49 @@ export const LiveLineChart: React.FC<LiveLineChartProps> = ({
         opacity: interpolate(popSpring, [0, 1], [0, 1]),
         width,
         height,
-        backgroundColor: 'rgba(11, 17, 32, 0.85)',
-        backdropFilter: 'blur(16px)',
-        borderRadius: 28,
-        border: '1.5px solid rgba(255, 107, 0, 0.3)',
-        padding: 24,
-        boxShadow: '0 20px 50px rgba(0, 0, 0, 0.6)',
+        // ZERO CARDS, ZERO BORDERS, ZERO FROSTED GLASS
+        backgroundColor: 'transparent',
+        border: 'none',
         pointerEvents: 'none',
         zIndex: 20,
       }}
     >
+      {/* Frameless Top Metric Callout */}
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12 }}>
-        <span style={{ fontSize: 22, fontWeight: 800, color: '#FFFFFF', letterSpacing: '-0.02em' }}>
-          365-Day Compounding Curve
+        <span
+          style={{
+            fontFamily: 'Inter, system-ui, sans-serif',
+            fontSize: 26,
+            fontWeight: 900,
+            color: '#FFFFFF',
+            letterSpacing: '-0.02em',
+            textShadow: '0 2px 10px rgba(0,0,0,0.8)',
+          }}
+        >
+          {label}
         </span>
-        <span style={{ fontSize: 18, fontWeight: 700, color: '#FF6B00' }}>
+        <span
+          style={{
+            fontFamily: 'Inter, system-ui, sans-serif',
+            fontSize: 26,
+            fontWeight: 900,
+            color,
+            textShadow: '0 0 25px rgba(255, 107, 0, 0.5)',
+          }}
+        >
           +{Math.round(progress * 3700)}% Advantage
         </span>
       </div>
 
       <svg width="100%" height={innerH + 40} viewBox={`0 0 ${width} ${height - 60}`} style={{ overflow: 'visible' }}>
         <defs>
-          <linearGradient id="curveGlow" x1="0" y1="0" x2="0" y2="1">
-            <stop offset="0%" stopColor="#FF6B00" stopOpacity="0.4" />
-            <stop offset="100%" stopColor="#FF6B00" stopOpacity="0.0" />
+          <linearGradient id="curveGlowFrameless" x1="0" y1="0" x2="0" y2="1">
+            <stop offset="0%" stopColor={color} stopOpacity="0.35" />
+            <stop offset="100%" stopColor={color} stopOpacity="0.0" />
           </linearGradient>
         </defs>
 
-        {/* Grid lines */}
+        {/* Subtle grid lines */}
         {[0, 0.25, 0.5, 0.75, 1].map((p, i) => (
           <line
             key={i}
@@ -100,7 +123,7 @@ export const LiveLineChart: React.FC<LiveLineChartProps> = ({
           />
         ))}
 
-        {/* Flat baseline: Zero Output (grey flat dashed line) */}
+        {/* Flat baseline: Zero Output (dashed) */}
         <line
           x1={padding}
           y1={padding + innerH - 10}
@@ -114,8 +137,9 @@ export const LiveLineChart: React.FC<LiveLineChartProps> = ({
           x={padding + 10}
           y={padding + innerH - 20}
           fill="#94A3B8"
-          fontSize="14"
+          fontSize="15"
           fontWeight="700"
+          fontFamily="Inter, system-ui, sans-serif"
         >
           Zero Daily Output (Stagnant)
         </text>
@@ -124,7 +148,7 @@ export const LiveLineChart: React.FC<LiveLineChartProps> = ({
         <path
           d={`M ${padding} ${padding + innerH - 10} Q ${padding + innerW * 0.65} ${padding + innerH - 20} ${padding + innerW} ${padding + 20}`}
           fill="none"
-          stroke="#FF6B00"
+          stroke={color}
           strokeWidth="6"
           strokeLinecap="round"
           strokeDasharray={pathLength}
@@ -135,7 +159,7 @@ export const LiveLineChart: React.FC<LiveLineChartProps> = ({
         {progress > 0.1 && (
           <path
             d={`M ${padding} ${padding + innerH - 10} Q ${padding + innerW * 0.65} ${padding + innerH - 20} ${padding + innerW} ${padding + 20} L ${padding + innerW} ${padding + innerH - 10} Z`}
-            fill="url(#curveGlow)"
+            fill="url(#curveGlowFrameless)"
             opacity={progress}
           />
         )}
@@ -160,7 +184,7 @@ export const LiveLineChart: React.FC<LiveLineChartProps> = ({
               cy={dotY}
               r="9"
               fill="#FFFFFF"
-              stroke="#FF6B00"
+              stroke={color}
               strokeWidth="4"
             />
           );

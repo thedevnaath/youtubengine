@@ -1,7 +1,8 @@
 import React from 'react';
 import { interpolate, useCurrentFrame, useVideoConfig } from 'remotion';
 import { OutputArena } from '../backgrounds/OutputArena';
-import { Stickman } from '../character/Stickman';
+import { StickmanIK, StickmanAction } from '../character/StickmanIK';
+import { GroundContactShadow } from '../character/ContextualProps';
 import { IconBadge } from '../visuals/IconBadge';
 import { KineticBurst } from '../visuals/KineticBurst';
 import { FileText, Dumbbell, Target, PhoneCall, Video, Lightbulb } from 'lucide-react';
@@ -14,40 +15,48 @@ export const Act3OutputShowcase: React.FC<ActProps> = ({ durationInFrames }) => 
   const frame = useCurrentFrame();
   const { fps } = useVideoConfig();
 
-  // Subtle camera drift and scale
-  const camProgress = interpolate(frame, [0, durationInFrames], [0, 1]);
-  const camScale = interpolate(camProgress, [0, 1], [1.0, 1.05]);
-
-  // Stickman in center of the arena - firmly grounded on platform (feet at Y=840)
+  const floorY = 820;
+  const stickmanScale = 1.05;
   const stickmanX = 960;
-  const stickmanY = 670;
 
-  // Stickman dynamic pointing targets matching the 6 output items
-  let pose: 'shrug' | 'point' | 'idle' = 'shrug';
-  let pointTarget = { x: 580, y: 320 };
+  // Subtle camera scale
+  const camProgress = interpolate(frame, [0, durationInFrames], [0, 1]);
+  const camScale = interpolate(camProgress, [0, 1], [1.0, 1.06]);
 
-  if (frame >= 280) {
-    pose = 'idle';
-  } else if (frame >= 240) {
-    pose = 'point';
-    pointTarget = { x: 1320, y: 730 }; // Idea executed (lower right)
-  } else if (frame >= 200) {
-    pose = 'point';
-    pointTarget = { x: 1440, y: 530 }; // Video edited (mid right)
-  } else if (frame >= 160) {
-    pose = 'point';
-    pointTarget = { x: 1340, y: 320 }; // Sales call (upper right)
-  } else if (frame >= 126) {
-    pose = 'point';
-    pointTarget = { x: 600, y: 730 }; // Skill practiced (lower left)
-  } else if (frame >= 90) {
-    pose = 'point';
-    pointTarget = { x: 480, y: 530 }; // Workout done (mid left)
-  } else if (frame >= 50) {
-    pose = 'point';
-    pointTarget = { x: 580, y: 320 }; // Page written (upper left)
+  // Dynamic stickman gestures tracking the 6 output units
+  let action: StickmanAction = 'shrug';
+  let pointAt: { x: number; y: number } | null = null;
+  let lookAt: { x: number; y: number } | null = null;
+
+  if (frame >= 285) {
+    action = 'explain';
+  } else if (frame >= 236) {
+    action = 'explain';
+    pointAt = { x: 1380, y: 700 };
+    lookAt = { x: 1380, y: 700 };
+  } else if (frame >= 196) {
+    action = 'explain';
+    pointAt = { x: 1440, y: 510 };
+    lookAt = { x: 1440, y: 510 };
+  } else if (frame >= 166) {
+    action = 'explain';
+    pointAt = { x: 1380, y: 320 };
+    lookAt = { x: 1380, y: 320 };
+  } else if (frame >= 116) {
+    action = 'explain';
+    pointAt = { x: 540, y: 700 };
+    lookAt = { x: 540, y: 700 };
+  } else if (frame >= 84) {
+    action = 'explain';
+    pointAt = { x: 480, y: 510 };
+    lookAt = { x: 480, y: 510 };
+  } else if (frame >= 45) {
+    action = 'explain';
+    pointAt = { x: 540, y: 320 };
+    lookAt = { x: 540, y: 320 };
   } else {
-    pose = 'shrug';
+    action = 'shrug';
+    lookAt = { x: 960, y: 240 };
   }
 
   return (
@@ -69,40 +78,86 @@ export const Act3OutputShowcase: React.FC<ActProps> = ({ durationInFrames }) => 
           willChange: 'transform',
         }}
       >
-        {/* Output Arena Background */}
+        {/* Layer 1: Output Arena Geometric Background */}
         <OutputArena />
 
-        {/* Flat Matte Tangerine Stickman in Center */}
-        <Stickman
-          pose={pose}
-          frame={frame}
-          pointTarget={pointTarget}
-          scale={1.05}
+        {/* Frameless Question Floating at Top Center (f0 - f45) */}
+        {frame < 45 && (
+          <div
+            style={{
+              position: 'absolute',
+              top: 130,
+              left: '50%',
+              transform: 'translateX(-50%)',
+              textAlign: 'center',
+              pointerEvents: 'none',
+              zIndex: 20,
+            }}
+          >
+            <span
+              style={{
+                fontFamily: 'Inter, system-ui, sans-serif',
+                fontSize: 64,
+                fontWeight: 900,
+                color: '#FF6B00',
+                letterSpacing: '-0.03em',
+                lineHeight: 1.05,
+                textShadow: '0 0 40px rgba(255, 107, 0, 0.45)',
+              }}
+            >
+              WHAT COUNTS AS OUTPUT?
+            </span>
+          </div>
+        )}
+
+        {/* Layer 2: Stickman & Contact Shadow in Center */}
+        <svg
+          viewBox="0 0 1920 1080"
           style={{
             position: 'absolute',
-            left: stickmanX,
-            top: stickmanY,
-            transform: 'translate(-50%, -50%)',
-            zIndex: 10,
+            inset: 0,
+            width: '100%',
+            height: '100%',
+            overflow: 'visible',
+            zIndex: 15,
           }}
-        />
+        >
+          {/* Universal Contact Shadow */}
+          <GroundContactShadow
+            cx={stickmanX}
+            cy={floorY + 4}
+            rx={38 * stickmanScale}
+            ry={8 * stickmanScale}
+            opacity={0.35}
+          />
 
-        {/* 6 Tangible Output Badges - Spatial Symmetry strictly within 1600x900 safe bounds */}
-        {/* Item 1: Page Written (f54) */}
+          {/* Locked Character Engine StickmanIK */}
+          <StickmanIK
+            x={stickmanX}
+            y={floorY}
+            scale={stickmanScale}
+            action={action}
+            pointAt={pointAt}
+            lookAt={lookAt}
+            flipX={false}
+          />
+        </svg>
+
+        {/* Layer 3: 6 Tangible Frameless Output Units (Safe zones: Left 480-540, Right 1380-1440) */}
+        {/* Left Column: 3 Units */}
         <IconBadge
           icon={FileText}
           label="1 PAGE WRITTEN"
-          sublabel="Manuscript Progress"
+          sublabel="Daily Manuscript"
           color="#38BDF8"
           frame={frame}
           fps={fps}
-          popFrame={54}
-          size={48}
-          x={580}
-          y={320}
+          popFrame={45}
+          size={52}
+          x={520}
+          y={310}
         />
 
-        {/* Item 2: Workout Done (f90) */}
         <IconBadge
           icon={Dumbbell}
           label="1 WORKOUT DONE"
@@ -110,86 +165,82 @@ export const Act3OutputShowcase: React.FC<ActProps> = ({ durationInFrames }) => 
           color="#34D399"
           frame={frame}
           fps={fps}
-          popFrame={90}
-          size={48}
-          x={480}
-          y={530}
+          popFrame={84}
+          size={52}
+          x={460}
+          y={500}
         />
 
-        {/* Item 3: Skill Practiced (f126) */}
         <IconBadge
           icon={Target}
           label="1 SKILL PRACTICED"
-          sublabel="Deliberate Mastery"
+          sublabel="Deliberate Focus"
           color="#FBBF24"
           frame={frame}
           fps={fps}
-          popFrame={126}
-          size={48}
-          x={600}
-          y={730}
+          popFrame={116}
+          size={52}
+          x={520}
+          y={690}
         />
 
-        {/* Item 4: Sales Call Made (f160) */}
+        {/* Right Column: 3 Units */}
         <IconBadge
           icon={PhoneCall}
           label="1 SALES CALL"
-          sublabel="Commercial Courage"
-          color="#F472B6"
-          frame={frame}
-          fps={fps}
-          popFrame={160}
-          size={48}
-          x={1340}
-          y={320}
-        />
-
-        {/* Item 5: Video Edited (f200) */}
-        <IconBadge
-          icon={Video}
-          label="1 VIDEO EDITED"
-          sublabel="Creative Output"
+          sublabel="Commercial Proof"
           color="#A78BFA"
           frame={frame}
           fps={fps}
-          popFrame={200}
-          size={48}
-          x={1440}
-          y={530}
+          popFrame={166}
+          size={52}
+          x={1400}
+          y={310}
         />
 
-        {/* Item 6: Idea Executed (f240) */}
+        <IconBadge
+          icon={Video}
+          label="1 VIDEO EDITED"
+          sublabel="Creative Leverage"
+          color="#F43F5E"
+          frame={frame}
+          fps={fps}
+          popFrame={196}
+          size={52}
+          x={1460}
+          y={500}
+        />
+
         <IconBadge
           icon={Lightbulb}
           label="1 IDEA EXECUTED"
-          sublabel="Action Over Analysis"
-          color="#FF6B00"
+          sublabel="Speed To Action"
+          color="#F97316"
           frame={frame}
           fps={fps}
-          popFrame={240}
-          size={48}
-          x={1320}
-          y={730}
+          popFrame={236}
+          size={52}
+          x={1400}
+          y={690}
         />
       </div>
 
-      {/* Kinetic Typography Punch-in for Beat 13 (f285 - f385) */}
+      {/* Kinetic Typography Punch-in for Beat 13: "Small is fine, but zero is not." (f285 - f390) */}
       <KineticBurst
         frame={frame}
         fps={fps}
         startFrame={285}
-        durationInFrames={100}
-        badge="THE GOLDEN THRESHOLD"
+        durationInFrames={105}
+        badge="THE GOLDEN PRINCIPLE"
         words={[
           { text: 'SMALL', delay: 0 },
-          { text: 'IS', delay: 3 },
-          { text: 'FINE', delay: 6, color: '#38BDF8' },
-          { text: '—', delay: 9 },
-          { text: 'ZERO', delay: 12, color: '#EF4444', highlight: true },
-          { text: 'IS', delay: 15 },
-          { text: 'NOT', delay: 18, color: '#EF4444', highlight: true },
+          { text: 'IS', delay: 4 },
+          { text: 'FINE.', delay: 8, highlight: true },
+          { text: 'ZERO', delay: 18, color: '#EF4444' },
+          { text: 'IS', delay: 22, color: '#EF4444' },
+          { text: 'NOT.', delay: 26, color: '#EF4444' },
         ]}
-        subtext="Any forward momentum counts. Inertia is the enemy."
+        subtext="0.01 compounded daily crushes 0 every single time."
         bgColor="#070B14"
       />
     </div>

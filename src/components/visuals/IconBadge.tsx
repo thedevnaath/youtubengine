@@ -19,22 +19,26 @@ interface IconBadgeProps {
   style?: React.CSSProperties;
 }
 
+/**
+ * Frameless In-World Visual Metaphor Callout (NO pill boxes, NO borders, NO frosted glass)
+ * Floats directly in 2D space with spring scale-in and clean typography.
+ */
 export const IconBadge: React.FC<IconBadgeProps> = ({
   icon: Icon,
   label,
   sublabel,
   color = '#FFFFFF',
-  bgTint = 'rgba(15, 23, 42, 0.75)',
   frame,
   fps,
   popFrame,
   strikeFrame,
-  checkFrame,
   size = 56,
   x = 0,
   y = 0,
   style = {},
 }) => {
+  if (frame < popFrame) return null;
+
   // Spring pop entrance
   const popSpring = spring({
     frame: frame - popFrame,
@@ -42,9 +46,7 @@ export const IconBadge: React.FC<IconBadgeProps> = ({
     config: { damping: 12, mass: 0.6, stiffness: 140 },
   });
 
-  if (frame < popFrame) return null;
-
-  // Strike-through animation (e.g. for "not five habits")
+  // Dynamic strike-through animation (e.g. for debunked concepts)
   const strikeProgress = strikeFrame !== undefined
     ? interpolate(frame - strikeFrame, [0, 8], [0, 1], {
         extrapolateLeft: 'clamp',
@@ -52,58 +54,53 @@ export const IconBadge: React.FC<IconBadgeProps> = ({
       })
     : 0;
 
-  // Check animation
-  const checkProgress = checkFrame !== undefined
-    ? interpolate(frame - checkFrame, [0, 8], [0, 1], {
-        extrapolateLeft: 'clamp',
-        extrapolateRight: 'clamp',
-      })
-    : 0;
-
-  const scale = interpolate(popSpring, [0, 1], [0.2, 1]);
+  const scale = interpolate(popSpring, [0, 1], [0.3, 1]);
   const opacity = interpolate(popSpring, [0, 1], [0, 1]);
+  // Subtle atmospheric float
+  const idleBob = Math.sin((frame - popFrame) * 0.08) * 3;
 
   return (
     <div
       style={{
         position: 'absolute',
         left: x,
-        top: y,
+        top: (y ?? 0) + idleBob,
         transform: `translate(-50%, -50%) scale(${scale})`,
         opacity,
         display: 'inline-flex',
         alignItems: 'center',
-        gap: 16,
-        padding: '12px 20px',
-        borderRadius: 9999,
-        backgroundColor: bgTint,
-        backdropFilter: 'blur(10px)',
-        border: `2px solid ${color}40`,
+        gap: 18,
+        // ZERO BOXES, ZERO BORDERS, ZERO PILL BADGES
+        background: 'none',
+        backgroundColor: 'transparent',
+        border: 'none',
+        padding: 0,
         pointerEvents: 'none',
-        zIndex: 20,
+        zIndex: 25,
+        filter: 'drop-shadow(0 4px 16px rgba(0, 0, 0, 0.65))',
         ...style,
       }}
     >
-      {/* Icon with potential strike line */}
+      {/* Icon with dynamic red slash if debunked */}
       <div style={{ position: 'relative', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-        <Icon size={size} color={color} strokeWidth={2.4} />
+        <Icon size={size} color={color} strokeWidth={2.6} />
 
-        {/* Dynamic Red Slash if debunked */}
+        {/* Dynamic Bold Red Slash if debunked */}
         {strikeFrame !== undefined && strikeProgress > 0 && (
           <svg
             style={{
               position: 'absolute',
-              inset: -8,
-              width: size + 16,
-              height: size + 16,
+              inset: -10,
+              width: size + 20,
+              height: size + 20,
               overflow: 'visible',
             }}
           >
             <line
               x1="4"
-              y1={size + 12}
-              x2={4 + (size + 8) * strikeProgress}
-              y2={(size + 12) - (size + 8) * strikeProgress}
+              y1={size + 14}
+              x2={4 + (size + 12) * strikeProgress}
+              y2={(size + 14) - (size + 12) * strikeProgress}
               stroke="#EF4444"
               strokeWidth={5}
               strokeLinecap="round"
@@ -112,20 +109,21 @@ export const IconBadge: React.FC<IconBadgeProps> = ({
         )}
       </div>
 
-      {/* Optional Minimal 1-2 word label */}
+      {/* Frameless Bold Typography */}
       {label && (
         <div style={{ display: 'flex', flexDirection: 'column' }}>
           <span
             style={{
               fontFamily: 'Inter, system-ui, -apple-system, sans-serif',
-              fontSize: 26,
-              fontWeight: 800,
+              fontSize: 28,
+              fontWeight: 900,
               color: strikeProgress > 0.5 ? '#94A3B8' : '#FFFFFF',
               textDecoration: strikeProgress > 0.5 ? 'line-through' : 'none',
               textDecorationColor: '#EF4444',
-              textDecorationThickness: '3px',
+              textDecorationThickness: '4px',
               letterSpacing: '-0.02em',
               lineHeight: 1.1,
+              textShadow: '0 2px 10px rgba(0, 0, 0, 0.7)',
             }}
           >
             {label}
@@ -134,10 +132,12 @@ export const IconBadge: React.FC<IconBadgeProps> = ({
             <span
               style={{
                 fontFamily: 'Inter, system-ui, -apple-system, sans-serif',
-                fontSize: 16,
-                fontWeight: 600,
-                color: '#94A3B8',
-                marginTop: 2,
+                fontSize: 18,
+                fontWeight: 700,
+                color: strikeProgress > 0.5 ? '#64748B' : color,
+                marginTop: 3,
+                letterSpacing: '0.01em',
+                textShadow: '0 2px 8px rgba(0, 0, 0, 0.7)',
               }}
             >
               {sublabel}
@@ -148,4 +148,3 @@ export const IconBadge: React.FC<IconBadgeProps> = ({
     </div>
   );
 };
-

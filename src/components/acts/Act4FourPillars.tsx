@@ -1,10 +1,15 @@
 import React from 'react';
-import { interpolate, useCurrentFrame, useVideoConfig } from 'remotion';
+import { interpolate, spring, useCurrentFrame, useVideoConfig } from 'remotion';
 import { TransformationArena } from '../backgrounds/TransformationArena';
-import { Stickman } from '../character/Stickman';
-import { IconBadge } from '../visuals/IconBadge';
+import { StickmanIK, StickmanAction } from '../character/StickmanIK';
+import {
+  GroundContactShadow,
+  WorkDeskStation,
+} from '../character/ContextualProps';
+import { TopDownBedroom } from '../character/TopDownBedroom';
 import { LiveLineChart } from '../visuals/LiveLineChart';
-import { Moon, Hammer, Layers, MessageSquare, Award } from 'lucide-react';
+import { IconBadge } from '../visuals/IconBadge';
+import { ShieldCheck, Sparkles, TrendingUp, Award } from 'lucide-react';
 
 interface ActProps {
   durationInFrames: number;
@@ -14,70 +19,73 @@ export const Act4FourPillars: React.FC<ActProps> = ({ durationInFrames }) => {
   const frame = useCurrentFrame();
   const { fps } = useVideoConfig();
 
-  // Determine current active phase:
-  // Phase 1 (f0 - f255): Kills Overthinking (2am bed -> 2pm workbench)
-  // Phase 2 (f255 - f440): Builds Proof (affirmations -> evidence bricks)
-  // Phase 3 (f440 - f620): It Compounds (Live Line Chart)
-  // Phase 4 (f620 - f868): Rewires Identity ('Want to be disciplined' -> 'Daily Producer')
-  const isPhase1 = frame < 255;
-  const isPhase2 = frame >= 255 && frame < 440;
-  const isPhase3 = frame >= 440 && frame < 620;
-  const isPhase4 = frame >= 620;
+  const floorY = 820;
+  const stickmanScale = 1.05;
+
+  // Determine active pillar phase:
+  // Phase 1: Overthinking (f0 - f255)
+  //   - 2:00 AM: Top-down ceiling shot (f0 - f160)
+  //   - 2:00 PM: Work desk afternoon shot (f160 - f255)
+  // Phase 2: Builds Proof (f255 - f440)
+  // Phase 3: It Compounds (f440 - f620)
+  // Phase 4: Rewires Identity (f620 - f868)
+  const isPillar1Bed = frame < 160;
+  const isPillar1Desk = frame >= 160 && frame < 255;
+  const isPillar2 = frame >= 255 && frame < 440;
+  const isPillar3 = frame >= 440 && frame < 620;
+  const isPillar4 = frame >= 620;
 
   // Dynamic Camera coordinates based on phase
   let camScale = 1.0;
-  let camX = 0;
-  let camY = 0;
+  let camPanX = 0;
 
-  if (isPhase1) {
-    camScale = interpolate(frame, [0, 255], [1.02, 1.08]);
-    camX = interpolate(frame, [140, 200], [0, -20], { extrapolateLeft: 'clamp', extrapolateRight: 'clamp' });
-  } else if (isPhase2) {
+  if (isPillar1Desk) {
     camScale = 1.08;
-    camX = -10;
-  } else if (isPhase3) {
+    camPanX = -20;
+  } else if (isPillar2) {
     camScale = 1.05;
-    camX = 40; // Pan slightly to frame the chart comfortably
-  } else {
-    camScale = interpolate(frame - 620, [0, 100], [1.05, 1.12], { extrapolateLeft: 'clamp', extrapolateRight: 'clamp' });
+    camPanX = -15;
+  } else if (isPillar3) {
+    camScale = 1.04;
+    camPanX = 25; // Frame the line chart comfortably on the right
+  } else if (isPillar4) {
+    camScale = interpolate(frame - 620, [0, 100], [1.04, 1.12], {
+      extrapolateLeft: 'clamp',
+      extrapolateRight: 'clamp',
+    });
   }
 
-  // Stickman pose and positioning per phase
-  let pose: 'toss_turn' | 'hammer' | 'idle' | 'point' | 'celebrate' = 'idle';
-  let stickmanX = 960;
-  let stickmanY = 600; // Grounded on horizon line (feet at Y=770)
-  let pointTarget = { x: 1200, y: 400 };
+  // Stickman pose and coordinates
+  let action: StickmanAction = 'idle';
+  let stickmanX = 640;
+  let pointAt: { x: number; y: number } | null = null;
+  let lookAt: { x: number; y: number } | null = null;
 
-  if (isPhase1) {
-    if (frame < 140) {
-      pose = 'toss_turn'; // 2:00 AM tossing in bed
-      stickmanX = 840;
-      stickmanY = 480;
+  if (isPillar1Desk) {
+    action = 'work';
+    stickmanX = 720;
+  } else if (isPillar2) {
+    if (frame < 340) {
+      action = 'explain';
+      stickmanX = 600;
+      pointAt = { x: 1300, y: 380 };
+      lookAt = { x: 1300, y: 380 };
     } else {
-      pose = 'hammer'; // 2:00 PM hammering at workbench
-      stickmanX = 860;
-      stickmanY = 600;
+      action = 'explain';
+      stickmanX = 600;
+      pointAt = { x: 1300, y: 640 };
+      lookAt = { x: 1300, y: 640 };
     }
-  } else if (isPhase2) {
-    pose = frame < 330 ? 'point' : 'idle';
-    stickmanX = 720;
-    stickmanY = 600;
-    pointTarget = { x: 1200, y: 360 };
-  } else if (isPhase3) {
-    pose = 'point';
+  } else if (isPillar3) {
+    action = 'explain';
     stickmanX = 460;
-    stickmanY = 600;
-    pointTarget = { x: 1180, y: 380 }; // Pointing up at LiveLineChart curve
-  } else {
-    // Phase 4: Identity Shift
-    pose = frame < 720 ? 'point' : 'celebrate';
-    stickmanX = 720;
-    stickmanY = 600;
-    pointTarget = { x: 1240, y: 380 };
+    pointAt = { x: 1200, y: 380 };
+    lookAt = { x: 1200, y: 380 };
+  } else if (isPillar4) {
+    action = frame < 720 ? 'explain' : 'celebrate';
+    stickmanX = 680;
+    lookAt = { x: 960, y: 400 };
   }
-
-  // Hammer swing sparks animation at workbench
-  const sparkTrigger = Math.sin((frame * 2 * Math.PI) / 14);
 
   return (
     <div
@@ -88,288 +96,345 @@ export const Act4FourPillars: React.FC<ActProps> = ({ durationInFrames }) => {
         backgroundColor: '#030712',
       }}
     >
-      {/* 2D Camera Rig Container */}
-      <div
-        style={{
-          position: 'absolute',
-          inset: 0,
-          transform: `scale(${camScale}) translate(${camX}px, ${camY}px)`,
-          transformOrigin: '960px 540px',
-          willChange: 'transform',
-        }}
-      >
-        {/* Transformation Arena Architectural Horizon */}
-        <TransformationArena />
+      {/* ===== PILLAR 1: 90-DEGREE TOP-DOWN CEILING SHOT (f0 - f160) ===== */}
+      {isPillar1Bed && (
+        <TopDownBedroom frame={frame} fps={fps} />
+      )}
 
-        {/* ===== PHASE 1 PROPS: BED (2 AM) vs WORKBENCH (2 PM) ===== */}
-        {isPhase1 && frame < 140 && (
-          /* 2:00 AM Bed Prop */
-          <svg
-            viewBox="0 0 400 200"
-            style={{
-              position: 'absolute',
-              left: 700,
-              top: 620,
-              width: 320,
-              height: 160,
-              zIndex: 10,
-            }}
-          >
-            {/* Wooden Bed Frame */}
-            <rect x="20" y="80" width="280" height="40" rx="8" fill="#1E293B" stroke="#334155" strokeWidth="3" />
-            <rect x="10" y="50" width="20" height="90" rx="6" fill="#334155" />
-            <rect x="290" y="65" width="20" height="75" rx="6" fill="#334155" />
-            {/* Pillow */}
-            <ellipse cx="65" cy="75" rx="35" ry="15" fill="#475569" />
-            {/* Blanket */}
-            <path d="M 110 80 Q 200 70 290 80 L 290 120 L 110 120 Z" fill="#0F172A" />
-          </svg>
-        )}
-
-        {isPhase1 && frame >= 140 && (
-          /* 2:00 PM Heavy Timber Workbench & Anvil Prop */
-          <svg
-            viewBox="0 0 300 260"
-            style={{
-              position: 'absolute',
-              left: 880,
-              top: 520,
-              width: 300,
-              height: 260,
-              zIndex: 16,
-            }}
-          >
-            {/* Sturdy Workbench Base */}
-            <rect x="20" y="110" width="220" height="30" rx="6" fill="#334155" stroke="#475569" strokeWidth="3" />
-            <rect x="35" y="140" width="25" height="100" rx="4" fill="#1E293B" />
-            <rect x="200" y="140" width="25" height="100" rx="4" fill="#1E293B" />
-            {/* Crossbeam */}
-            <rect x="35" y="195" width="190" height="15" rx="3" fill="#1E293B" />
-
-            {/* Steel Anvil */}
-            <path d="M 80 110 L 170 110 L 160 80 L 90 80 Z" fill="#64748B" />
-            <rect x="70" y="65" width="110" height="18" rx="5" fill="#94A3B8" />
-
-            {/* Hammer Strike Sparks */}
-            {sparkTrigger < -0.4 && (
-              <g>
-                <circle cx="125" cy="60" r="5" fill="#FDE047" />
-                <line x1="125" y1="60" x2="105" y2="40" stroke="#FF6B00" strokeWidth="3" strokeLinecap="round" />
-                <line x1="125" y1="60" x2="145" y2="35" stroke="#FDE047" strokeWidth="3" strokeLinecap="round" />
-                <line x1="125" y1="60" x2="130" y2="30" stroke="#FFA040" strokeWidth="2.5" strokeLinecap="round" />
-              </g>
-            )}
-          </svg>
-        )}
-
-        {/* Flat Matte Tangerine Stickman */}
-        <Stickman
-          pose={pose}
-          frame={frame}
-          pointTarget={pointTarget}
-          scale={1.05}
+      {/* ===== SIDE VIEW CAMERA RIG FOR PILLARS 1B, 2, 3, 4 ===== */}
+      {!isPillar1Bed && (
+        <div
           style={{
             position: 'absolute',
-            left: stickmanX,
-            top: stickmanY,
-            transform: 'translate(-50%, -50%)',
-            zIndex: 15,
+            inset: 0,
+            transform: `scale(${camScale}) translate(${camPanX}px, 0px)`,
+            transformOrigin: '960px 540px',
+            willChange: 'transform',
           }}
-        />
+        >
+          {/* Layer 1: Architectural Transformation Arena Background */}
+          <TransformationArena />
 
-        {/* ===== PHASE 1: KILLS OVERTHINKING (f0 - f255) ===== */}
-        {isPhase1 && (
-          <>
-            {/* Initial Pillar Banner */}
-            {frame < 80 && (
+          {/* Layer 2: Props and Stickman in SVG Space */}
+          <svg
+            viewBox="0 0 1920 1080"
+            style={{
+              position: 'absolute',
+              inset: 0,
+              width: '100%',
+              height: '100%',
+              overflow: 'visible',
+              zIndex: 15,
+            }}
+          >
+            {/* Pillar 1B: Work Desk Station at 2:00 PM */}
+            {isPillar1Desk && (
+              <WorkDeskStation
+                x={stickmanX}
+                y={floorY}
+                scale={stickmanScale}
+                screenGlowColor="#FBBF24"
+              />
+            )}
+
+            {/* Pillar 2: Solid Heavy Granite Evidence Block slamming to floor (f340+) */}
+            {isPillar2 && frame >= 340 && (
+              <g>
+                {/* Heavy stone contact shadow */}
+                <GroundContactShadow cx={1300} cy={floorY + 4} rx={120} ry={16} opacity={0.55} />
+                {/* Concrete/Granite Evidence Block */}
+                <rect
+                  x={1160}
+                  y={floorY - 140}
+                  width={280}
+                  height={140}
+                  rx={8}
+                  fill="#1E293B"
+                  stroke="#475569"
+                  strokeWidth={4}
+                />
+                {/* Block Surface Shading */}
+                <path d={`M 1160 ${floorY - 140} L 1200 ${floorY - 165} L 1480 ${floorY - 165} L 1440 ${floorY - 140} Z`} fill="#334155" />
+                <path d={`M 1440 ${floorY - 140} L 1480 ${floorY - 165} L 1480 ${floorY - 25} L 1440 ${floorY} Z`} fill="#0F172A" />
+                <text
+                  x={1300}
+                  y={floorY - 60}
+                  textAnchor="middle"
+                  fill="#F8FAFC"
+                  fontFamily="Inter, system-ui, sans-serif"
+                  fontWeight="900"
+                  fontSize="28"
+                  letterSpacing="0.1em"
+                >
+                  SOLID EVIDENCE
+                </text>
+              </g>
+            )}
+
+            {/* Universal Contact Shadow under stickman */}
+            <GroundContactShadow
+              cx={stickmanX}
+              cy={floorY + 4}
+              rx={36 * stickmanScale}
+              ry={8 * stickmanScale}
+              opacity={0.35}
+            />
+
+            {/* Locked Character Engine StickmanIK */}
+            <StickmanIK
+              x={stickmanX}
+              y={floorY}
+              scale={stickmanScale}
+              action={action}
+              pointAt={pointAt}
+              lookAt={lookAt}
+              flipX={false}
+            />
+          </svg>
+
+          {/* ===== LAYER 3: IN-WORLD FRAMELESS TYPOGRAPHY (Zero pill boxes) ===== */}
+          {/* Pillar 1B Frameless Afternoon Label (f160 - f255) */}
+          {isPillar1Desk && (
+            <div
+              style={{
+                position: 'absolute',
+                top: 180,
+                right: 240,
+                display: 'flex',
+                flexDirection: 'column',
+                pointerEvents: 'none',
+                zIndex: 25,
+              }}
+            >
+              <span
+                style={{
+                  fontFamily: 'Inter, system-ui, sans-serif',
+                  fontSize: 64,
+                  fontWeight: 900,
+                  color: '#FBBF24',
+                  letterSpacing: '-0.03em',
+                  lineHeight: 1.05,
+                  textShadow: '0 0 35px rgba(251, 191, 36, 0.45)',
+                }}
+              >
+                2:00 PM
+              </span>
+              <span
+                style={{
+                  fontFamily: 'Inter, system-ui, sans-serif',
+                  fontSize: 32,
+                  fontWeight: 800,
+                  color: '#FFFFFF',
+                  marginTop: 8,
+                  textShadow: '0 2px 10px rgba(0, 0, 0, 0.8)',
+                }}
+              >
+                Building In Reality
+              </span>
+            </div>
+          )}
+
+          {/* Pillar 2: Affirmations vs Evidence (f255 - f440) */}
+          {isPillar2 && (
+            <>
+              {/* Frameless Pillar Heading */}
               <div
                 style={{
                   position: 'absolute',
-                  top: 120,
-                  left: '50%',
-                  transform: 'translateX(-50%)',
-                  padding: '8px 28px',
-                  borderRadius: 9999,
-                  backgroundColor: 'rgba(255, 107, 0, 0.15)',
-                  border: '1.5px solid #FF6B00',
+                  top: 140,
+                  left: 200,
+                  fontFamily: 'Inter, system-ui, sans-serif',
+                  fontSize: 48,
+                  fontWeight: 900,
                   color: '#FF6B00',
-                  fontSize: 22,
-                  fontWeight: 800,
-                  letterSpacing: '0.12em',
-                  textTransform: 'uppercase',
+                  letterSpacing: '-0.02em',
+                  pointerEvents: 'none',
+                  zIndex: 25,
+                  textShadow: '0 0 30px rgba(255, 107, 0, 0.4)',
                 }}
               >
-                THE 4 PILLARS OF TRANSFORMATION
+                2. BUILDS PROOF
               </div>
-            )}
 
-            {/* 2:00 AM Overthinking Badge */}
-            {frame >= 80 && frame < 150 && (
-              <IconBadge
-                icon={Moon}
-                label="2:00 AM OVERTHINKING"
-                sublabel="Endless Mental Loops"
-                color="#818CF8"
-                frame={frame}
-                fps={fps}
-                popFrame={84}
-                size={50}
-                x={720}
-                y={340}
-              />
-            )}
+              {/* Fading Affirmations (f270 - f340) */}
+              {frame < 340 && (
+                <IconBadge
+                  icon={Sparkles}
+                  label="EMPTY AFFIRMATIONS"
+                  sublabel="Fleeting Words"
+                  color="#94A3B8"
+                  frame={frame}
+                  fps={fps}
+                  popFrame={270}
+                  strikeFrame={305}
+                  size={54}
+                  x={1300}
+                  y={380}
+                />
+              )}
 
-            {/* 2:00 PM Building at Workbench Badge */}
-            {frame >= 140 && (
+              {/* Tangible Proof (f340 - f440) */}
+              {frame >= 340 && (
+                <IconBadge
+                  icon={ShieldCheck}
+                  label="TANGIBLE EVIDENCE"
+                  sublabel="Irrefutable Confidence"
+                  color="#34D399"
+                  frame={frame}
+                  fps={fps}
+                  popFrame={340}
+                  size={58}
+                  x={1300}
+                  y={420}
+                />
+              )}
+            </>
+          )}
+
+          {/* Pillar 3: It Compounds (f440 - f620) */}
+          {isPillar3 && (
+            <>
+              {/* Frameless Pillar Heading */}
+              <div
+                style={{
+                  position: 'absolute',
+                  top: 140,
+                  left: 200,
+                  fontFamily: 'Inter, system-ui, sans-serif',
+                  fontSize: 48,
+                  fontWeight: 900,
+                  color: '#FF6B00',
+                  letterSpacing: '-0.02em',
+                  pointerEvents: 'none',
+                  zIndex: 25,
+                  textShadow: '0 0 30px rgba(255, 107, 0, 0.4)',
+                }}
+              >
+                3. IT COMPOUNDS
+              </div>
+
+              {/* Dynamic Live Line Chart (f450 - f620) */}
+              <div
+                style={{
+                  position: 'absolute',
+                  left: 780,
+                  top: 240,
+                  width: 780,
+                  height: 480,
+                  zIndex: 20,
+                }}
+              >
+                <LiveLineChart
+                  frame={frame}
+                  fps={fps}
+                  startFrame={450}
+                  durationInFrames={160}
+                  label="365 DAILY OUTPUTS"
+                  color="#FF6B00"
+                />
+              </div>
+
+              {/* Frameless Callout */}
               <IconBadge
-                icon={Hammer}
-                label="2:00 PM BUILDING"
-                sublabel="Tangible Action & Execution"
+                icon={TrendingUp}
+                label="UNFAIR ADVANTAGE"
+                sublabel="365 Daily Units"
                 color="#FF6B00"
                 frame={frame}
                 fps={fps}
-                popFrame={140}
-                checkFrame={160}
+                popFrame={490}
                 size={54}
-                x={1260}
-                y={360}
+                x={1350}
+                y={220}
               />
-            )}
-          </>
-        )}
+            </>
+          )}
 
-        {/* ===== PHASE 2: BUILDS PROOF (f255 - f440) ===== */}
-        {isPhase2 && (
-          <>
-            {/* Pillar 2 Header */}
-            <div
-              style={{
-                position: 'absolute',
-                top: 140,
-                left: 160,
-                color: '#38BDF8',
-                fontSize: 22,
-                fontWeight: 800,
-                letterSpacing: '0.1em',
-              }}
-            >
-              PILLAR 2: EVIDENCE OVER AFFIRMATIONS
-            </div>
+          {/* Pillar 4: Rewires Identity (f620 - f868) */}
+          {isPillar4 && (
+            <>
+              {/* Frameless Pillar Heading */}
+              <div
+                style={{
+                  position: 'absolute',
+                  top: 140,
+                  left: 200,
+                  fontFamily: 'Inter, system-ui, sans-serif',
+                  fontSize: 48,
+                  fontWeight: 900,
+                  color: '#FF6B00',
+                  letterSpacing: '-0.02em',
+                  pointerEvents: 'none',
+                  zIndex: 25,
+                  textShadow: '0 0 30px rgba(255, 107, 0, 0.4)',
+                }}
+              >
+                4. REWIRES IDENTITY
+              </div>
 
-            {/* Affirmations Slashed */}
-            <IconBadge
-              icon={MessageSquare}
-              label="EMPTY AFFIRMATIONS"
-              sublabel="Words Without Backing"
-              color="#94A3B8"
-              frame={frame}
-              fps={fps}
-              popFrame={265}
-              strikeFrame={290}
-              size={50}
-              x={1220}
-              y={360}
-            />
+              {/* Fading Wishful Thinking (f630 - f720) */}
+              {frame < 725 && (
+                <div
+                  style={{
+                    position: 'absolute',
+                    left: 1250,
+                    top: 380,
+                    display: 'flex',
+                    flexDirection: 'column',
+                    transform: 'translate(-50%, -50%)',
+                    pointerEvents: 'none',
+                    zIndex: 25,
+                    opacity: interpolate(frame, [690, 725], [1, 0], {
+                      extrapolateLeft: 'clamp',
+                      extrapolateRight: 'clamp',
+                    }),
+                  }}
+                >
+                  <span
+                    style={{
+                      fontFamily: 'Inter, system-ui, sans-serif',
+                      fontSize: 42,
+                      fontWeight: 800,
+                      color: '#64748B',
+                      fontStyle: 'italic',
+                      lineHeight: 1.15,
+                    }}
+                  >
+                    "I want to be disciplined..."
+                  </span>
+                  <span
+                    style={{
+                      fontFamily: 'Inter, system-ui, sans-serif',
+                      fontSize: 20,
+                      fontWeight: 600,
+                      color: '#475569',
+                      marginTop: 8,
+                    }}
+                  >
+                    Passive Wishful Identity
+                  </span>
+                </div>
+              )}
 
-            {/* Concrete Output Evidence Bricks */}
-            <IconBadge
-              icon={Layers}
-              label="TANGIBLE EVIDENCE"
-              sublabel="Solid Stack of Daily Completed Work"
-              color="#34D399"
-              frame={frame}
-              fps={fps}
-              popFrame={330}
-              checkFrame={350}
-              size={54}
-              x={1220}
-              y={530}
-            />
-          </>
-        )}
-
-        {/* ===== PHASE 3: IT COMPOUNDS (f440 - f620) ===== */}
-        {isPhase3 && (
-          <>
-            {/* Pillar 3 Header */}
-            <div
-              style={{
-                position: 'absolute',
-                top: 140,
-                left: 160,
-                color: '#FF6B00',
-                fontSize: 22,
-                fontWeight: 800,
-                letterSpacing: '0.1em',
-              }}
-            >
-              PILLAR 3: THE 365-DAY EXPONENTIAL
-            </div>
-
-            {/* Live Line Chart animates live from left to right */}
-            <LiveLineChart
-              frame={frame}
-              fps={fps}
-              startFrame={450}
-              durationInFrames={140}
-              width={780}
-              height={440}
-              x={1200}
-              y={490}
-            />
-          </>
-        )}
-
-        {/* ===== PHASE 4: REWIRES IDENTITY (f620 - f868) ===== */}
-        {isPhase4 && (
-          <>
-            {/* Pillar 4 Header */}
-            <div
-              style={{
-                position: 'absolute',
-                top: 140,
-                left: 160,
-                color: '#FBBF24',
-                fontSize: 22,
-                fontWeight: 800,
-                letterSpacing: '0.1em',
-              }}
-            >
-              PILLAR 4: REWIRING IDENTITY
-            </div>
-
-            {/* Want to be disciplined (slashed) */}
-            <IconBadge
-              icon={MessageSquare}
-              label="'I WANT TO BE DISCIPLINED'"
-              sublabel="Aspirational Identity"
-              color="#94A3B8"
-              frame={frame}
-              fps={fps}
-              popFrame={630}
-              strikeFrame={660}
-              size={50}
-              x={1240}
-              y={380}
-            />
-
-            {/* Daily Producer (confirmed) */}
-            <IconBadge
-              icon={Award}
-              label="DAILY PRODUCER"
-              sublabel="Evidence-Backed Reality"
-              color="#FF6B00"
-              frame={frame}
-              fps={fps}
-              popFrame={700}
-              checkFrame={725}
-              size={58}
-              x={1240}
-              y={550}
-            />
-          </>
-        )}
-      </div>
+              {/* Heroic Identity: Daily Producer (f725+) */}
+              {frame >= 725 && (
+                <IconBadge
+                  icon={Award}
+                  label="DAILY PRODUCER"
+                  sublabel="Embodied Identity"
+                  color="#FF6B00"
+                  frame={frame}
+                  fps={fps}
+                  popFrame={725}
+                  size={64}
+                  x={1280}
+                  y={380}
+                />
+              )}
+            </>
+          )}
+        </div>
+      )}
     </div>
   );
 };
